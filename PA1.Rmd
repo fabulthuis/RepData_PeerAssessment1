@@ -1,0 +1,90 @@
+---
+title: "Reproducible Research, Peer Assessment 1"
+---
+Activity Monitoring Data    
+========================  
+  
+  
+
+##Load libraries
+```{r}
+if (!'dplyr' %in% installed.packages()) install.packages('dplyr')
+if (!'timeDate' %in% installed.packages()) install.packages('timeDate')
+if (!'lattice' %in% installed.packages()) install.packages('lattice')
+library(dplyr)
+library(timeDate)
+library(lattice)
+```
+  
+  
+##Loading and preprocessing the data
+```{r}
+activityData <- read.csv("activity.csv", stringsAsFactors = FALSE)
+```
+  
+  
+##Some metrics
+```{r, fig.height = 5, fig.width = 8}
+groupActivityData <- group_by(activityData, date)
+summarizedActivityData <- summarise(groupActivityData, 
+                                    totalNumberSteps = sum(steps, na.rm = TRUE)
+                                    )
+hist(summarizedActivityData$totalNumberSteps, "Sturges", 
+     main = "Histogram of the total number of steps taken each day",
+     xlab = "Number of steps taken each day")
+meanTotalStepsPerDay <- mean(summarizedActivityData$totalNumberSteps)
+medianTotalStepsPerDay <- median(summarizedActivityData$totalNumberSteps)
+```
+
+**The mean of the total number of steps taken per day is: `r round(meanTotalStepsPerDay) `  **  
+**The median of the total nubmer of stepts taken per day is: `r medianTotalStepsPerDay `  **
+
+##Average daily activity pattern
+```{r}
+groupActivityIntervalData <- group_by(activityData, interval)
+summarizedActivityIntervalData <- summarise(groupActivityIntervalData,
+                                            avgNumberSteps = mean(steps, na.rm = TRUE))
+plot(summarizedActivityIntervalData$interval, summarizedActivityIntervalData$avgNumberSteps, type = "l", xlab = "5-minute interval", ylab = "Average number of steps", main =  "Average number of steps per 5-minute interval")
+
+MaxNrStepInterval <- summarizedActivityIntervalData[with(summarizedActivityIntervalData, avgNumberSteps == max(avgNumberSteps)),'interval']
+```
+
+**The 5-minute interval that on average across all the days contains the maximum number of steps is: `r MaxNrStepInterval ` **  
+
+##Imputing missing values
+#Missing values are replaced by the mean number of steps in the 5-minute interval for which the values are missing.  
+```{r, fig.height = 5, fig.width = 10}
+NrOfMissingValues <- sum(is.na(activityData))
+
+activityDataWithoutNAs<- activityData
+activityDataWithoutNAs$steps <- ifelse(is.na(activityData$steps), summarizedActivityIntervalData$avgNumberSteps[summarizedActivityIntervalData == activityData$interval ], activityData$steps )
+
+groupActivityDataWithoutNAs <- group_by(activityDataWithoutNAs, date)
+summarizedActivityDataWithoutNAs <- summarise(groupActivityDataWithoutNAs, 
+                                    totalNumberSteps = sum(steps, na.rm = TRUE)
+                                    )
+hist(summarizedActivityDataWithoutNAs$totalNumberSteps, "Sturges", 
+     main = "Histogram of the total number of steps taken each day (with imputed missing values)",
+     xlab = "Number of steps taken each day")
+meanTotalStepsPerDayWithoutNAs <- mean(summarizedActivityDataWithoutNAs$totalNumberSteps)
+medianTotalStepsPerDayWithoutNAs <- median(summarizedActivityDataWithoutNAs$totalNumberSteps)
+options(scipen = 6)
+
+```
+
+**The total number of missing values in the dataset is: `r NrOfMissingValues `**  
+**The mean of the total number of steps taken per day is: `r round(meanTotalStepsPerDayWithoutNAs) `  **  
+**The median of the total number of steps taken per day is: `r round(medianTotalStepsPerDayWithoutNAs) `  **  
+  
+The mean and the median total number of steps before imputing missing values are different from the mean and median after imputing missing values. After imputing missing values the mean and median total number of steps are higher than before. 
+
+```{r}
+activityDataWithoutNAs$weekDay <- factor(isWeekday(activityDataWithoutNAs$date) + 1L, levels = 1:2, labels = c('weekend', 'weekday'))
+
+groupActivityDataByWeekday <- group_by(activityDataWithoutNAs, interval, weekDay)
+summarizedActivityDataByWeekdays <- summarise(groupActivityDataByWeekday, 
+                                    totalNumberSteps = sum(steps, na.rm = TRUE)
+                                    )
+
+
+xyplot(totalNumberSteps~interval | weekDay , data = summarizedActivityDataByWeekdays, layout = c(1,2), xlab = "5-minute interval", ylab = "Average number of steps", type = 'l')

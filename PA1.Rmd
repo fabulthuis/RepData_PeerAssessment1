@@ -27,7 +27,7 @@ activityData <- read.csv("activity.csv", stringsAsFactors = FALSE)
   
   
 ##Some metrics
-```{r, fig.height = 5, fig.width = 8}
+```{r total number of steps by day, fig.height = 5, fig.width = 8, fig.path='figures/histogram1'}
 groupActivityData <- group_by(activityData, date)
 summarizedActivityData <- summarise(groupActivityData, 
                                     totalNumberSteps = sum(steps, na.rm = TRUE)
@@ -43,7 +43,7 @@ medianTotalStepsPerDay <- median(summarizedActivityData$totalNumberSteps)
 **The median of the total nubmer of stepts taken per day is: `r medianTotalStepsPerDay `  **
 
 ##Average daily activity pattern
-```{r}
+```{r average number of steps by interval, fig.path='figures/timeseries1'}
 groupActivityIntervalData <- group_by(activityData, interval)
 summarizedActivityIntervalData <- summarise(groupActivityIntervalData,
                                             avgNumberSteps = mean(steps, na.rm = TRUE))
@@ -56,7 +56,7 @@ MaxNrStepInterval <- summarizedActivityIntervalData[with(summarizedActivityInter
 
 ##Imputing missing values
 #Missing values are replaced by the mean number of steps in the 5-minute interval for which the values are missing.  
-```{r, fig.height = 5, fig.width = 10}
+```{r total number of steps by day without missing values, fig.height = 5, fig.width = 10, fig.path='figures/histogram2'}
 NrOfMissingValues <- sum(is.na(activityData))
 
 activityDataWithoutNAs<- activityData
@@ -81,7 +81,7 @@ options(scipen = 6)
   
 The mean and the median total number of steps before imputing missing values are different from the mean and median after imputing missing values. After imputing missing values the mean and median total number of steps are higher than before. 
 
-```{r}
+```{r total number of steps by interval and weekday ,fig.path='figures/panelplot1'}
 activityDataWithoutNAs$weekDay <- factor(isWeekday(activityDataWithoutNAs$date) + 1L, levels = 1:2, labels = c('weekend', 'weekday'))
 
 groupActivityDataByWeekday <- group_by(activityDataWithoutNAs, interval, weekDay)
